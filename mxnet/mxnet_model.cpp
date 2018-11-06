@@ -164,8 +164,8 @@ void OutputOfIndex ( PredictorHandle pred_hnd, /* mxnet model */
   MXPredGetOutputShape(pred_hnd, output_index, &shape, &shape_len);
   assert(shape_len==4);
 
-  std::cout << "output shape_len: " << shape_len << std::endl;
-  for(mx_uint index=0; index<shape_len; index++) std::cout << shape[index] << std::endl;
+  // std::cout << "output shape_len: " << shape_len << std::endl;
+  // for(mx_uint index=0; index<shape_len; index++) std::cout << shape[index] << std::endl;
 
   std::size_t size = 1;
   out_shape.clear();

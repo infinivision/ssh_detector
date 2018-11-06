@@ -26,7 +26,8 @@ inline void filter_threshold( std::vector<bool> & idx, const std::vector<T> & v,
 
 template<typename T>
 inline void tensor_slice(std::vector<T> & tensor1, std::vector<T> & tensor2, 
-                  std::vector<bool> & idx, int stride){
+                         std::vector<bool> & idx, int stride) {
+    tensor2.clear();
     for(size_t i=0; i<idx.size(); i++)
         if(idx[i]==true)
             for(int j=0;j<stride;j++)

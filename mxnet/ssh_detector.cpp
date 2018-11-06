@@ -40,7 +40,8 @@ SSH::~SSH(){
     MXPredFree(pred_hnd);
 }
 
-void SSH::detect(cv::Mat& im, std::vector<cv::Rect2d>& bbox){
+void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes, 
+                              std::vector<cv::Point2f> & target_landmarks) {
 
     assert(im.channels()==3);
     int size = im.rows * im.cols * 3;
@@ -67,7 +68,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2d>& bbox){
         }
     }
     PredictorHandle pred_hnd = (PredictorHandle) handle;
-    for(size_t i = 0+size/3; i<10+size/3; i++) std::cout <<  std::setprecision(7) <<"image_data: " << image_data[i] << "\n";
+    // for(size_t i = 0+size/3; i<10+size/3; i++) std::cout <<  std::setprecision(7) <<"image_data: " << image_data[i] << "\n";
     Infer(pred_hnd, image_data);
 
     // Inference
@@ -129,26 +130,25 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2d>& bbox){
     
     std::vector<int> order;
     argsort(order, scores);
-    for(size_t i=0;i<order.size();i++) std::cout << "order: " << order[i] << "\n";
+    // for(size_t i=0;i<order.size();i++) std::cout << "order: " << order[i] << "\n";
 
     std::vector<float> order_scores;
     std::vector<cv::Rect2f> order_boxes;
     std::vector<cv::Point2f> order_landmarks;
 
-    //std::cout << "scores.size() " << scores.size() << "\n";
-    //std::cout << "landmarks.size() " << landmarks.size() << "\n";
-
-
     sort_with_idx(scores, order_scores, order, 1);
     sort_with_idx(boxes,  order_boxes, order, 1);
     sort_with_idx(landmarks, order_landmarks, order, 5);
 
-    for(auto & s: order_scores) std::cout << "scores: " << s << "\n";
-    for(auto & b: order_boxes) std::cout  << "boxes: "  << b << "\n";
-    for(auto & l: order_landmarks) std::cout << "landmarks: " << l << "\n";
+    // for(auto & s: order_scores) std::cout << "scores: " << s << "\n";
+    // for(auto & b: order_boxes) std::cout  << "boxes: "  << b << "\n";
+    // for(auto & l: order_landmarks) std::cout << "landmarks: " << l << "\n";
 
-    std::vector<int> keep;
+    std::vector<bool> keep(order_scores.size(),false);
     nms(order_scores, order_boxes, keep, nms_threshold);
-    for(auto & k:keep) std::cout << "keep: " << k << "\n";
+    // for(size_t i=0;i<keep.size();i++) if(keep[i]) std::cout << "keep: " << i << "\n";
+
+    tensor_slice(order_boxes,     target_boxes,     keep, 1);
+    tensor_slice(order_landmarks, target_landmarks, keep, 5);
 
 }

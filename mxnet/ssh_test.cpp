@@ -25,7 +25,13 @@ int main(int argc, char* argv[]) {
 
   cv::Mat im = cv::imread(image_path, cv::IMREAD_COLOR);
   SSH det(model_path, im.cols, im.rows);
-  std::vector<cv::Rect2d> bbox;
-  det.detect(im,bbox);
+  std::vector<cv::Rect2f> bboxes;
+  std::vector<cv::Point2f> landmarks;
+  det.detect(im,bboxes,landmarks);
+
+  assert(bboxes.size()*5 == landmarks.size());
+
+  for(auto & b: bboxes) std::cout << "b:" << b << "\n";
+  for(auto & l: landmarks) std::cout << "l:" << l << "\n";
 
 }

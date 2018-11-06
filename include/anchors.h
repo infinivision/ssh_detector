@@ -163,12 +163,12 @@ void landmark_pred(std::vector<cv::Rect2f> & anchors, std::vector<cv::Point2f> &
 }
 
 void nms(std::vector<float> & scores, std::vector<cv::Rect2f> & boxes,
-         std::vector<int> & keep, float thresh) {
+         std::vector<bool> & keep, float thresh) {
     std::vector<bool> suppressed( scores.size(), false);
     for(int i=0;i<scores.size();i++){
         if(suppressed[i] == true)
             continue;
-        keep.push_back(i);
+        keep[i] = true;
         float ix1 = boxes[i].tl().x;
         float iy1 = boxes[i].tl().y;
         float ix2 = boxes[i].br().x;
