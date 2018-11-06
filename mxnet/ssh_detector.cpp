@@ -3,10 +3,21 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <sys/time.h>
 
 #include "anchors.h"
 
 #include "mxnet_model.h"
+
+static float getElapse(struct timeval *tv1,struct timeval *tv2)
+{
+    float t = 0.0f;
+    if (tv1->tv_sec == tv2->tv_sec)
+        t = (tv2->tv_usec - tv1->tv_usec)/1000.0f;
+    else
+        t = ((tv2->tv_sec - tv1->tv_sec) * 1000 * 1000 + tv2->tv_usec - tv1->tv_usec)/1000.0f;
+    return t;
+}
 
 SSH::SSH(const std::string& model_path, int w, int h) {
 
@@ -69,8 +80,13 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     }
     PredictorHandle pred_hnd = (PredictorHandle) handle;
     // for(size_t i = 0+size/3; i<10+size/3; i++) std::cout <<  std::setprecision(7) <<"image_data: " << image_data[i] << "\n";
-    Infer(pred_hnd, image_data);
 
+    struct timeval  tv1,tv2;
+    float sum_time = 0;
+    gettimeofday(&tv1,NULL);
+    Infer(pred_hnd, image_data);
+    gettimeofday(&tv2,NULL);
+    sum_time += getElapse(&tv1, &tv2);
     // Inference
     std::vector<float> scores;
     std::vector<cv::Rect2f> boxes;
@@ -81,7 +97,12 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         std::vector<float> scores1;
         int index;
         index = i*3;
+
+        gettimeofday(&tv1,NULL);
         OutputOfIndex(pred_hnd, scores1, shape, index);
+        gettimeofday(&tv2,NULL);
+        sum_time += getElapse(&tv1, &tv2);
+
         int hscore = shape[2];
         int wscore = shape[3];
         std::vector<float> scores2;
@@ -95,7 +116,12 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
 
         index++;
         std::vector<float> bbox_deltas;
+
+        gettimeofday(&tv1,NULL);
         OutputOfIndex(pred_hnd, bbox_deltas, shape, index);
+        gettimeofday(&tv2,NULL);
+        sum_time += getElapse(&tv1, &tv2);
+
         int h = shape[2];
         int w = shape[3];
 
@@ -109,7 +135,12 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         // for(size_t i=0; i<5; i++) std::cout <<  "boxes1: " << boxes1[i] << "\n";
         index++;
         std::vector<float> landmark_deltas;
+
+        gettimeofday(&tv1,NULL);
         OutputOfIndex(pred_hnd, landmark_deltas, shape, index);
+        gettimeofday(&tv2,NULL);
+        sum_time += getElapse(&tv1, &tv2);
+
         std::vector<cv::Point2f> landmarks1;
         landmark_pred(anchors, landmarks1, landmark_deltas, h, w);
         // for(size_t i=0; i<20; i++) std::cout <<  "landmarks: " << landmarks1[i] << "\n";
@@ -150,5 +181,8 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
 
     tensor_slice(order_boxes,     target_boxes,     keep, 1);
     tensor_slice(order_landmarks, target_landmarks, keep, 5);
+
+    std::cout << "mxnet infer, time eclipsed: " << sum_time  << " ms\n";
+
 
 }

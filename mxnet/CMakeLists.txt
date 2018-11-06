@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.10)
 
 project(ssh_detector_mxnet)
 
-add_definitions("-Wall -g -O0")
+add_definitions("-Wall -g -O2")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 find_package( OpenCV REQUIRED )
@@ -32,3 +32,6 @@ target_link_libraries(main mxnet ${OpenCV_LIBS} glog)
 
 add_executable(ssh_test ssh_test.cpp ssh_detector.cpp mxnet_model.cpp )
 target_link_libraries(ssh_test mxnet ${OpenCV_LIBS} glog)
+
+add_executable(ssh_bench ssh_bench.cpp ssh_detector.cpp mxnet_model.cpp )
+target_link_libraries(ssh_bench mxnet ${OpenCV_LIBS} glog)

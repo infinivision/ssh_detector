@@ -34,4 +34,6 @@ int main(int argc, char* argv[]) {
   for(auto & b: bboxes) std::cout << "b:" << b << "\n";
   for(auto & l: landmarks) std::cout << "l:" << l << "\n";
 
+  if(bboxes.size()==0) std::cout << "detect no face!\n";
+
 }
