@@ -1,11 +1,12 @@
 #include "ssh_detector.h"
+
 #include <iostream>
 #include <iomanip>
 #include <sys/time.h>
 
-#include "anchors.h"
+#include "opencv2/dnn.hpp"
 
-#include "mxnet_model.h"
+#include "anchors.h"
 
 static float getElapse(struct timeval *tv1,struct timeval *tv2)
 {
@@ -21,59 +22,51 @@ SSH::SSH(const std::string& model_path, int w, int h) {
 
     generate_anchors_fpn(anchors_fpn, num_anchors);
 
-    std::string json_file = model_path + "/mneti-symbol.json";
-    std::string param_file = model_path + "/mneti-0000.params";
+    std::string model  = model_path + ".caffemodel";
+    std::string config = model_path + ".prototxt";
+    // Load model handle
+    auto net = new cv::dnn::Net();
 
-    int channels = 3;
-    InputShape input_shape (w, h, channels);
-    
-    // Load model
-    PredictorHandle pred_hnd = nullptr;
-    LoadMXNetModel(&pred_hnd, json_file, param_file, input_shape);
+    *net= cv::dnn::readNetFromCaffe(config, model);
 
-    handle = (void *) pred_hnd;
+    std::cout << "opencv dnn read caffe net \n";
 
+    net->setPreferableBackend(0);
+    net->setPreferableTarget(0);
+
+    handle = (void *) net;
 }
 
+
 SSH::~SSH(){
-    PredictorHandle pred_hnd = (PredictorHandle) handle;
-    MXPredFree(pred_hnd);
+    // Free model handle
+    delete (cv::dnn::Net *) handle;
+    std::cout << "release opencv dnn inference handle!\n";
 }
 
 void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes, 
                               std::vector<cv::Point2f> & target_landmarks) {
 
-    assert(im.channels()==3);
-    int size = im.rows * im.cols * 3;
 
-    std::vector<mx_float> image_data(size);
+    cv::Mat blob;
+    cv::dnn::blobFromImage(im, blob, 1.0, cv::Size(224,224) );
 
-    mx_float* ptr_image_r = image_data.data();
-    mx_float* ptr_image_g = image_data.data() + size / 3;
-    mx_float* ptr_image_b = image_data.data() + size / 3 * 2;
+    cv::dnn::Net * net = ( cv::dnn::Net *) handle;
 
-    for (int i = 0; i < im.rows; i++) {
-        auto data = im.ptr<uchar>(i);
+    net->setInput(blob);
+    cv::Mat feature = net->forward("fc1000");
 
-        for (int j = 0; j < im.cols; j++) {
-            *ptr_image_b = static_cast<mx_float>(((*data)/pixel_scale - pixel_means[0]) / pixel_stds[0]);
-            ptr_image_b++;
-            data++;
-            *ptr_image_g = static_cast<mx_float>(((*data)/pixel_scale - pixel_means[1]) / pixel_stds[1]);                
-            ptr_image_g++;
-            data++;
-            *ptr_image_r = static_cast<mx_float>(((*data)/pixel_scale - pixel_means[2]) / pixel_stds[2]);
-            ptr_image_r++;
-            data++;
-        }
-    }
-    PredictorHandle pred_hnd = (PredictorHandle) handle;
-    // for(size_t i = 0+size/3; i<10+size/3; i++) std::cout <<  std::setprecision(7) <<"image_data: " << image_data[i] << "\n";
+    std::cout << "cols: "<< feature.cols << " "
+              << "rows: "<< feature.rows << " " 
+              << "channels: "<<  feature.channels()
+              << std::endl;
 
+    /*
     struct timeval  tv1,tv2;
     float sum_time = 0;
     gettimeofday(&tv1,NULL);
-    Infer(pred_hnd, image_data);
+    // Forward Inference 
+
     gettimeofday(&tv2,NULL);
     sum_time += getElapse(&tv1, &tv2);
     // Inference
@@ -88,7 +81,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         index = i*3;
 
         gettimeofday(&tv1,NULL);
-        OutputOfIndex(pred_hnd, scores1, shape, index);
+
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
 
@@ -107,7 +100,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         std::vector<float> bbox_deltas;
 
         gettimeofday(&tv1,NULL);
-        OutputOfIndex(pred_hnd, bbox_deltas, shape, index);
+
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
 
@@ -126,7 +119,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         std::vector<float> landmark_deltas;
 
         gettimeofday(&tv1,NULL);
-        OutputOfIndex(pred_hnd, landmark_deltas, shape, index);
+
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
 
@@ -173,5 +166,5 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
 
     std::cout << "mxnet infer, time eclipsed: " << sum_time  << " ms\n";
 
-
+    */
 }

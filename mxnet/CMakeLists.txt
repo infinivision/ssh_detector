@@ -31,10 +31,10 @@ link_directories(
 add_subdirectory(${PROJECT_SOURCE_DIR}/ssh_detector)
 
 add_executable(main main.cpp )
-target_link_libraries(main ssh_detector mxnet ${OpenCV_LIBS} glog)
+target_link_libraries(main ssh_detector mxnet ${OpenCV_LIBS} )
 
 add_executable(ssh_test ssh_test.cpp )
-target_link_libraries(ssh_test ssh_detector mxnet ${OpenCV_LIBS} glog)
+target_link_libraries(ssh_test ssh_detector mxnet ${OpenCV_LIBS} )
 
 add_executable(ssh_bench ssh_bench.cpp )
-target_link_libraries(ssh_bench ssh_detector mxnet ${OpenCV_LIBS} glog)
+target_link_libraries(ssh_bench ssh_detector mxnet ${OpenCV_LIBS} )
