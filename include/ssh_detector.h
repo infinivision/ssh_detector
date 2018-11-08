@@ -22,7 +22,7 @@ private:
     std::map<int, std::vector<cv::Rect2f>> anchors_fpn;
     std::map<int,int>                      num_anchors;
 
-    const int   rpn_pre_nms_top_n = 1000;
+    // const int   rpn_pre_nms_top_n = 1000;
     const float nms_threshold = 0.3;
     const float threshold = 0.5;
 

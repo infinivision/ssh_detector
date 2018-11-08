@@ -10,6 +10,7 @@ find_package( OpenCV REQUIRED )
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 include_directories(${OpenCV_INCLUDE_DIRS})
+
 include_directories(${PROJECT_SOURCE_DIR}/../include)
 
 message(STATUS "mxnet include path: ${MXNET_PATH}/include")
@@ -27,11 +28,13 @@ link_directories(
   /usr/local/lib
 )
 
-add_executable(main main.cpp mxnet_model.cpp )
-target_link_libraries(main mxnet ${OpenCV_LIBS} glog)
+add_subdirectory(${PROJECT_SOURCE_DIR}/ssh_detector)
 
-add_executable(ssh_test ssh_test.cpp ssh_detector.cpp mxnet_model.cpp )
-target_link_libraries(ssh_test mxnet ${OpenCV_LIBS} glog)
+add_executable(main main.cpp )
+target_link_libraries(main ssh_detector mxnet ${OpenCV_LIBS} glog)
 
-add_executable(ssh_bench ssh_bench.cpp ssh_detector.cpp mxnet_model.cpp )
-target_link_libraries(ssh_bench mxnet ${OpenCV_LIBS} glog)
+add_executable(ssh_test ssh_test.cpp )
+target_link_libraries(ssh_test ssh_detector mxnet ${OpenCV_LIBS} glog)
+
+add_executable(ssh_bench ssh_bench.cpp )
+target_link_libraries(ssh_bench ssh_detector mxnet ${OpenCV_LIBS} glog)

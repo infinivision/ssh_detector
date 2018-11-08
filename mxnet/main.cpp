@@ -31,7 +31,7 @@
  * E-mail: liuxiao@foxmail.com
 */
 
-#include "mxnet_model.h"
+#include "ssh_detector/mxnet_model.h"
 
 #include "anchors.h"
 
