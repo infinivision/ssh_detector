@@ -70,12 +70,16 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     PredictorHandle pred_hnd = (PredictorHandle) handle;
     // for(size_t i = 0+size/3; i<10+size/3; i++) std::cout <<  std::setprecision(7) <<"image_data: " << image_data[i] << "\n";
 
+    #ifdef BENCH_SSH
     struct timeval  tv1,tv2;
     float sum_time = 0;
     gettimeofday(&tv1,NULL);
+    #endif
     mxInfer(pred_hnd, image_data);
+    #ifdef BENCH_SSH
     gettimeofday(&tv2,NULL);
     sum_time += getElapse(&tv1, &tv2);
+    #endif
     // Inference
     std::vector<float> scores;
     std::vector<cv::Rect2f> boxes;
@@ -86,11 +90,14 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         std::vector<float> scores1;
         int index;
         index = i*3;
-
+        #ifdef BENCH_SSH
         gettimeofday(&tv1,NULL);
+        #endif
         mxOutputOfIndex(pred_hnd, scores1, shape, index);
+        #ifdef BENCH_SSH
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
+        #endif
 
         int hscore = shape[2];
         int wscore = shape[3];
@@ -106,10 +113,14 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         index++;
         std::vector<float> bbox_deltas;
 
+        #ifdef BENCH_SSH
         gettimeofday(&tv1,NULL);
+        #endif
         mxOutputOfIndex(pred_hnd, bbox_deltas, shape, index);
+        #ifdef BENCH_SSH
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
+        #endif
 
         int h = shape[2];
         int w = shape[3];
@@ -125,10 +136,14 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         index++;
         std::vector<float> landmark_deltas;
 
+        #ifdef BENCH_SSH
         gettimeofday(&tv1,NULL);
+        #endif
         mxOutputOfIndex(pred_hnd, landmark_deltas, shape, index);
+        #ifdef BENCH_SSH
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
+        #endif
 
         std::vector<cv::Point2f> landmarks1;
         landmark_pred(anchors, landmarks1, landmark_deltas, h, w);
@@ -171,7 +186,8 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     tensor_slice(order_boxes,     target_boxes,     keep, 1);
     tensor_slice(order_landmarks, target_landmarks, keep, 5);
 
+    #ifdef BENCH_SSH
     std::cout << "mxnet infer, time eclipsed: " << sum_time  << " ms\n";
-
+    #endif
 
 }

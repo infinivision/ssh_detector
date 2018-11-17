@@ -5,6 +5,10 @@ project(ssh_detector_mxnet)
 add_definitions("-Wall -g -O2")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+if(BENCH_SSH)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBENCH_SSH")
+endif()
+
 find_package( OpenCV REQUIRED )
 
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
