@@ -68,30 +68,30 @@ int main(int argc, char* argv[]) {
   int width = 640;
   int height = 640;
   int channels = 3;
-  InputShape input_shape (width, height, channels);
+  mxInputShape input_shape (width, height, channels);
   
   // Load model
   PredictorHandle pred_hnd = nullptr;
-  LoadMXNetModel(&pred_hnd, json_file, param_file, input_shape);
+  mxLoadMXNetModel(&pred_hnd, json_file, param_file, input_shape);
 
   // Read Image Data
   auto image_size = static_cast<std::size_t>(width * height * channels);
   std::vector<mx_float> image_data(image_size);
-  GetImageFile(image_path, image_data);
+  mxGetImageFile(image_path, image_data);
 
   // Inference
   std::vector<float> data;
   mx_uint output_index = index;
   std::vector<int> shape;
-  Infer(pred_hnd, image_data);
-  OutputOfIndex(pred_hnd, data, shape, output_index);
+  mxInfer(pred_hnd, image_data);
+  mxOutputOfIndex(pred_hnd, data, shape, output_index);
 
   // normalize the output vector
   std::vector<float> output(data.size());
   cv::normalize(data, output);
 
   // Print Output Data
-  // PrintOutputResult(output);
+  // mxPrintOutputResult(output);
 
   // Release Predictor
   MXPredFree(pred_hnd);

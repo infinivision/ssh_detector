@@ -25,11 +25,11 @@ SSH::SSH(const std::string& model_path, int w, int h) {
     std::string param_file = model_path + "/mneti-0000.params";
 
     int channels = 3;
-    InputShape input_shape (w, h, channels);
+    mxInputShape input_shape (w, h, channels);
     
     // Load model
     PredictorHandle pred_hnd = nullptr;
-    LoadMXNetModel(&pred_hnd, json_file, param_file, input_shape);
+    mxLoadMXNetModel(&pred_hnd, json_file, param_file, input_shape);
 
     handle = (void *) pred_hnd;
 
@@ -73,7 +73,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     struct timeval  tv1,tv2;
     float sum_time = 0;
     gettimeofday(&tv1,NULL);
-    Infer(pred_hnd, image_data);
+    mxInfer(pred_hnd, image_data);
     gettimeofday(&tv2,NULL);
     sum_time += getElapse(&tv1, &tv2);
     // Inference
@@ -88,7 +88,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         index = i*3;
 
         gettimeofday(&tv1,NULL);
-        OutputOfIndex(pred_hnd, scores1, shape, index);
+        mxOutputOfIndex(pred_hnd, scores1, shape, index);
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
 
@@ -107,7 +107,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         std::vector<float> bbox_deltas;
 
         gettimeofday(&tv1,NULL);
-        OutputOfIndex(pred_hnd, bbox_deltas, shape, index);
+        mxOutputOfIndex(pred_hnd, bbox_deltas, shape, index);
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
 
@@ -126,7 +126,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         std::vector<float> landmark_deltas;
 
         gettimeofday(&tv1,NULL);
-        OutputOfIndex(pred_hnd, landmark_deltas, shape, index);
+        mxOutputOfIndex(pred_hnd, landmark_deltas, shape, index);
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
 

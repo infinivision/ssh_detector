@@ -45,7 +45,7 @@ int m_channel=0;
 int m_width=0;
 int m_height=0;
 
-BufferFile::BufferFile(const std::string& file_path):file_path_(file_path) {
+mxBufferFile::mxBufferFile(const std::string& file_path):file_path_(file_path) {
 
     std::ifstream ifs(file_path.c_str(), std::ios::in | std::ios::binary);
     if (!ifs) {
@@ -63,7 +63,7 @@ BufferFile::BufferFile(const std::string& file_path):file_path_(file_path) {
     ifs.close();
 }
 
-InputShape::InputShape(int width, int height, int channels) {
+mxInputShape::mxInputShape(int width, int height, int channels) {
     input_shape_data[0] = 1;
     input_shape_data[1] = static_cast<mx_uint>(channels); 
     input_shape_data[2] = static_cast<mx_uint>(height);
@@ -73,7 +73,7 @@ InputShape::InputShape(int width, int height, int channels) {
 // input opencv image matrix
 // output image vecotr for mxnet
 // input mat will be resize if it does not have a shape equal to the mxnet model
-void imgFormConvert( const cv::Mat input, std::vector<mx_float> & img_vec) {
+void mxImgFormConvert( const cv::Mat input, std::vector<mx_float> & img_vec) {
   cv::Mat ori,im;
   if(!input.isContinuous()){
     input.copyTo(ori);
@@ -113,7 +113,7 @@ void imgFormConvert( const cv::Mat input, std::vector<mx_float> & img_vec) {
 
 }
 
-void GetImageFile(const std::string& image_file, std::vector<mx_float> & image_data ) {
+void mxGetImageFile(const std::string& image_file, std::vector<mx_float> & image_data ) {
   // Read all kinds of file into a BGR color 3 channels image
   // the shape(height, width, channels)
   cv::Mat im = cv::imread(image_file, cv::IMREAD_COLOR);
@@ -141,7 +141,7 @@ void GetImageFile(const std::string& image_file, std::vector<mx_float> & image_d
   }
 }
 
-void Infer ( PredictorHandle pred_hnd,         /* mxnet model */
+void mxInfer ( PredictorHandle pred_hnd,         /* mxnet model */
            std::vector<mx_float> &image_data   /* input data */ )
 {         
 
@@ -152,7 +152,7 @@ void Infer ( PredictorHandle pred_hnd,         /* mxnet model */
   MXPredForward(pred_hnd);
 }
 
-void OutputOfIndex ( PredictorHandle pred_hnd, /* mxnet model */
+void mxOutputOfIndex ( PredictorHandle pred_hnd, /* mxnet model */
            std::vector<float> &data,           /* output vector */
            std::vector<int> &out_shape,        /* output tensor shape */
            mx_uint output_index ) { 
@@ -180,7 +180,7 @@ void OutputOfIndex ( PredictorHandle pred_hnd, /* mxnet model */
 
 }
 
-void PrintOutputResult(const std::vector<float>& output) {
+void mxPrintOutputResult(const std::vector<float>& output) {
     std::cout<< "embedding size: " << output.size() <<"\n";
     for(int i=0; i < output.size(); ++i) {
     std::cout << output[i];
@@ -205,15 +205,15 @@ void PrintOutputResult(const std::vector<float>& output) {
  * Output:
  * - PredictorHandle
  */
-void LoadMXNetModel ( PredictorHandle* pred_hnd, /* Output */
+void mxLoadMXNetModel ( PredictorHandle* pred_hnd, /* Output */
                       std::string json_file,     /* path to model-symbol.json */
                       std::string param_file,    /* path to model-0000.params */
-                      InputShape shape,          /* input shape to mxnet model (1, channels, height, width) */
+                      mxInputShape shape,          /* input shape to mxnet model (1, channels, height, width) */
                       int dev_type,              /* 1: cpu, 2:gpu */
                       int dev_id ) {             /* 0: arbitary */
 
-  BufferFile json_data(json_file);
-  BufferFile param_data(param_file);
+  mxBufferFile json_data(json_file);
+  mxBufferFile param_data(param_file);
 
   if (json_data.GetLength() == 0 || param_data.GetLength() == 0) {
     std::cerr << "Cannot load mxnet model" << std::endl;

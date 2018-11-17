@@ -24,6 +24,7 @@ int main(int argc, char* argv[]) {
   std::string image_path = parser.get<std::string>(0);
 
   cv::Mat im = cv::imread(image_path, cv::IMREAD_COLOR);
+  std::cout << "img resolution: " << im.cols << "*" << im.rows << "\n";
   SSH det(model_path, im.cols, im.rows);
   std::vector<cv::Rect2f> bboxes;
   std::vector<cv::Point2f> landmarks;
