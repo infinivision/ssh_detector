@@ -144,12 +144,12 @@ void mxGetImageFile(const std::string& image_file, std::vector<mx_float> & image
 void mxInfer ( PredictorHandle pred_hnd,         /* mxnet model */
            std::vector<mx_float> &image_data   /* input data */ )
 {         
-
   // Set Input Image
-  MXPredSetInput(pred_hnd, "data", image_data.data(), static_cast<mx_uint>(image_data.size()));
-
+  int res = MXPredSetInput(pred_hnd, "data", image_data.data(), static_cast<mx_uint>(image_data.size()));
+  assert(res == 0);
   // Do Predict Forward
-  MXPredForward(pred_hnd);
+  res = MXPredForward(pred_hnd);
+  assert(res == 0);
 }
 
 void mxOutputOfIndex ( PredictorHandle pred_hnd, /* mxnet model */
@@ -161,11 +161,13 @@ void mxOutputOfIndex ( PredictorHandle pred_hnd, /* mxnet model */
   mx_uint shape_len;
 
   // Get Output Result
-  MXPredGetOutputShape(pred_hnd, output_index, &shape, &shape_len);
-  assert(shape_len==4);
+  int res = MXPredGetOutputShape(pred_hnd, output_index, &shape, &shape_len);
+  assert(res == 0);
 
   // std::cout << "output shape_len: " << shape_len << std::endl;
   // for(mx_uint index=0; index<shape_len; index++) std::cout << shape[index] << std::endl;
+
+  assert(shape_len==4);
 
   std::size_t size = 1;
   out_shape.clear();
@@ -176,7 +178,8 @@ void mxOutputOfIndex ( PredictorHandle pred_hnd, /* mxnet model */
 
   data.resize(size);
 
-  MXPredGetOutput(pred_hnd, output_index, &(data[0]), static_cast<mx_uint>(size));
+  res = MXPredGetOutput(pred_hnd, output_index, &(data[0]), static_cast<mx_uint>(size));
+  assert(res == 0);
 
 }
 
@@ -230,7 +233,7 @@ void mxLoadMXNetModel ( PredictorHandle* pred_hnd, /* Output */
   const char** input_keys = input_key;
 
   // Create Predictor
-  MXPredCreate(static_cast<const char*>(json_data.GetBuffer()),
+  int res = MXPredCreate(static_cast<const char*>(json_data.GetBuffer()),
                static_cast<const char*>(param_data.GetBuffer()),
                static_cast<int>(param_data.GetLength()),
                dev_type,
@@ -240,6 +243,23 @@ void mxLoadMXNetModel ( PredictorHandle* pred_hnd, /* Output */
                shape.input_shape_indptr,
                shape.input_shape_data,
                pred_hnd);
-  assert(pred_hnd);
+  assert(res==0);
 }
 
+void mxHandleReshape(PredictorHandle  handle,   /* mxnet model handle */
+                     mxInputShape     shape,    /* new shape */
+                     PredictorHandle* out) {    /* new hanlde */
+  
+  mx_uint num_input_nodes = 1;  // 1 for feedforward
+  const char* input_key[1] = { "data" };
+  const char** input_keys = input_key;
+  // mxnet 1.2.1 has bug in c api MXPredReshape
+  // must merge bug fix commit 31244922d7861fef484fc315e633b4a0cc7e6ff6
+  int res = MXPredReshape(num_input_nodes,
+                input_keys,
+                shape.input_shape_indptr,
+                shape.input_shape_data,
+                handle,
+                out );
+  assert(res == 0);
+}

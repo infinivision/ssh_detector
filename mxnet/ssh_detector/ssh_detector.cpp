@@ -33,6 +33,8 @@ SSH::SSH(const std::string& model_path, int w, int h) {
 
     handle = (void *) pred_hnd;
 
+    this->w = w;
+    this->h = h;
 }
 
 SSH::~SSH(){
@@ -45,6 +47,20 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
 
     assert(im.channels()==3);
     int size = im.rows * im.cols * 3;
+
+    PredictorHandle pred_hnd = nullptr;    
+    mxInputShape input_shape(im.cols, im.rows, 3);
+
+    #ifdef BENCH_SSH
+    struct timeval  tv1,tv2;
+    float sum_time = 0;
+    gettimeofday(&tv1,NULL);
+    #endif   
+    mxHandleReshape((PredictorHandle) handle, input_shape, &pred_hnd);
+    #ifdef BENCH_SSH
+    gettimeofday(&tv2,NULL);
+    sum_time += getElapse(&tv1, &tv2);
+    #endif
 
     std::vector<mx_float> image_data(size);
 
@@ -67,12 +83,10 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
             data++;
         }
     }
-    PredictorHandle pred_hnd = (PredictorHandle) handle;
+    
     // for(size_t i = 0+size/3; i<10+size/3; i++) std::cout <<  std::setprecision(7) <<"image_data: " << image_data[i] << "\n";
 
     #ifdef BENCH_SSH
-    struct timeval  tv1,tv2;
-    float sum_time = 0;
     gettimeofday(&tv1,NULL);
     #endif
     mxInfer(pred_hnd, image_data);
@@ -187,6 +201,12 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     tensor_slice(order_landmarks, target_landmarks, keep, 5);
 
     #ifdef BENCH_SSH
+    gettimeofday(&tv1,NULL);
+    #endif
+    MXPredFree(pred_hnd);
+    #ifdef BENCH_SSH
+    gettimeofday(&tv2,NULL);
+    sum_time += getElapse(&tv1, &tv2);    
     std::cout << "mxnet infer, time eclipsed: " << sum_time  << " ms\n";
     #endif
 

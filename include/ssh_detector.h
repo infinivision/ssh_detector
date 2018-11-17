@@ -27,6 +27,8 @@ private:
     const float threshold = 0.5;
 
     void * handle;
+    int w;
+    int h;
 
     // nms();
 

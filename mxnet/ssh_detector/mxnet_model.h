@@ -57,8 +57,12 @@ void mxLoadMXNetModel ( PredictorHandle* pred_hnd, /* Output */
                       int dev_id = 0             /* 0: arbitary */
                     );
 
+void mxHandleReshape(PredictorHandle  handle,   /* mxnet model handle */
+                     mxInputShape     shape,    /* new shape */
+                     PredictorHandle* out);     /* new hanlde */
+
 void mxInfer ( PredictorHandle pred_hnd,         /* mxnet model */
-           std::vector<mx_float> &image_data   /* input data */ );
+           std::vector<mx_float> &image_data);   /* input data */ 
 
 void mxOutputOfIndex ( PredictorHandle pred_hnd, /* mxnet model */
            std::vector<float> &data,           /* output vector */
