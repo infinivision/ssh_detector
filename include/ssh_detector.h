@@ -8,7 +8,7 @@
 
 class SSH{
 public:
-    SSH(const std::string& model_path, int w, int h);
+    SSH(const std::string& model_path, int w = 800, int h = 600);
     ~SSH();
     void detect(cv::Mat& img, std::vector<cv::Rect2f>  & target_boxes, 
                               std::vector<cv::Point2f> & target_landmarks);
