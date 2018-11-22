@@ -41,10 +41,6 @@
 
 #include "mxnet_model.h"
 
-int m_channel=0;
-int m_width=0;
-int m_height=0;
-
 mxBufferFile::mxBufferFile(const std::string& file_path):file_path_(file_path) {
 
     std::ifstream ifs(file_path.c_str(), std::ios::in | std::ios::binary);
@@ -70,48 +66,6 @@ mxInputShape::mxInputShape(int width, int height, int channels) {
     input_shape_data[3] = static_cast<mx_uint>(width);
 }
 
-// input opencv image matrix
-// output image vecotr for mxnet
-// input mat will be resize if it does not have a shape equal to the mxnet model
-void mxImgFormConvert( const cv::Mat input, std::vector<mx_float> & img_vec) {
-  cv::Mat ori,im;
-  if(!input.isContinuous()){
-    input.copyTo(ori);
-    if(!ori.isContinuous()){
-      std::cerr << "not enough continous memory for opencv mat\n";
-      exit(1);
-    }
-  } else {
-    ori = input;
-  }
-  if(ori.channels()!=m_channel){
-      std::cerr << "mat channel is " << ori.channels()  << " ,can not proccess!\n";
-      exit(1);
-  }
-
-  if(ori.cols*ori.rows!= m_width*m_height) {
-    cv::resize(ori,im,cv::Size(m_width,m_height));
-  } else
-    im = ori;
-
-  int size = m_channel * m_width * m_height;
-  img_vec.resize(size);
-  mx_float* image_data  = img_vec.data();
-  mx_float* ptr_image_r = image_data;
-  mx_float* ptr_image_g = image_data + size / 3;
-  mx_float* ptr_image_b = image_data + size / 3 * 2;
-
-  for (int i = 0; i < im.rows; i++) {
-    auto data = im.ptr<uchar>(i);
-
-    for (int j = 0; j < im.cols; j++) {
-        *ptr_image_b++ = static_cast<mx_float>(*data++);
-        *ptr_image_g++ = static_cast<mx_float>(*data++);
-        *ptr_image_r++ = static_cast<mx_float>(*data++);
-    }
-  }
-
-}
 
 void mxGetImageFile(const std::string& image_file, std::vector<mx_float> & image_data ) {
   // Read all kinds of file into a BGR color 3 channels image

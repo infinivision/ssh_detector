@@ -71,6 +71,4 @@ void mxOutputOfIndex ( PredictorHandle pred_hnd, /* mxnet model */
 
 void mxPrintOutputResult(const std::vector<float>& output);
 
-void mxImgFormConvert( const cv::Mat input, std::vector<mx_float> & img_vec);
-
 #endif // _MXNET_MODEL_H_
