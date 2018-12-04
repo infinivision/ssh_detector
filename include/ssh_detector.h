@@ -8,10 +8,12 @@
 
 class SSH{
 public:
-    SSH(const std::string& model_path, int w = 800, int h = 600);
+    SSH(const std::string& model_path, int w = 800, int h = 600, 
+                                       float threshold = 0.95, float nms_threshold = 0.3);
     ~SSH();
     void detect(cv::Mat& img, std::vector<cv::Rect2f>  & target_boxes, 
-                              std::vector<cv::Point2f> & target_landmarks);
+                              std::vector<cv::Point2f> & target_landmarks,
+                              std::vector<float>       & target_scores);
 
 private:
 
@@ -23,8 +25,8 @@ private:
     std::map<int,int>                      num_anchors;
 
     // const int   rpn_pre_nms_top_n = 1000;
-    const float nms_threshold = 0.3;
-    const float threshold = 0.5;
+    float nms_threshold = 0.3;
+    float threshold = 0.95;
 
     void * handle;
     int w;

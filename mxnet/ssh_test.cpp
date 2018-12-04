@@ -29,12 +29,14 @@ int main(int argc, char* argv[]) {
   SSH det(model_path, 100, 100);
   std::vector<cv::Rect2f> bboxes;
   std::vector<cv::Point2f> landmarks;
-  det.detect(im,bboxes,landmarks);
+  std::vector<float> scores;
+  det.detect(im,bboxes,landmarks,scores);
 
   assert(bboxes.size()*5 == landmarks.size());
 
   for(auto & b: bboxes) std::cout << "b:" << b << "\n";
   for(auto & l: landmarks) std::cout << "l:" << l << "\n";
+  for(auto & s: scores) std::cout << "s:" << s << "\n";
 
   if(bboxes.size()==0) std::cout << "detect no face!\n";
 

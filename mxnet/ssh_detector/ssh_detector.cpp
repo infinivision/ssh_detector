@@ -17,7 +17,7 @@ static float getElapse(struct timeval *tv1,struct timeval *tv2)
     return t;
 }
 
-SSH::SSH(const std::string& model_path, int w, int h) {
+SSH::SSH(const std::string& model_path, int w, int h, float threshold, float nms_threshold) {
 
     generate_anchors_fpn(anchors_fpn, num_anchors);
 
@@ -35,6 +35,9 @@ SSH::SSH(const std::string& model_path, int w, int h) {
 
     this->w = w;
     this->h = h;
+    this->threshold     = threshold;
+    this->nms_threshold = nms_threshold;
+
 }
 
 SSH::~SSH(){
@@ -43,7 +46,8 @@ SSH::~SSH(){
 }
 
 void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes, 
-                              std::vector<cv::Point2f> & target_landmarks) {
+                              std::vector<cv::Point2f> & target_landmarks,
+                              std::vector<float>       & target_scores) {
 
     assert(im.channels()==3);
     int size = im.rows * im.cols * 3;
@@ -199,6 +203,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
 
     tensor_slice(order_boxes,     target_boxes,     keep, 1);
     tensor_slice(order_landmarks, target_landmarks, keep, 5);
+    tensor_slice(order_scores,    target_scores,    keep, 1);
 
     #ifdef BENCH_SSH
     gettimeofday(&tv1,NULL);
