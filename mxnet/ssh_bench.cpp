@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+#include <stdio.h>
+
 static float getElapse(struct timeval *tv1,struct timeval *tv2)
 {
     float t = 0.0f;
@@ -17,7 +19,9 @@ int main(int argc, char* argv[]) {
 
   const std::string keys =
       "{help h usage ? |                | print this message   }"
-      "{model          |../../model     | path to ssh model    }"
+      "{model_path     |../../model     | path to ssh model  }"
+      "{model_name     |mneti           | model name }"
+      "{blur           |false           | if use blur scores }" 
       "{threshold      |0.95            | threshold for detect score }"
       "{nms_threshold  |0.3             | nms_threshold for ssh detector }"      
       "{output         |./output        | path to save detect output  }"
@@ -37,7 +41,9 @@ int main(int argc, char* argv[]) {
       return EXIT_FAILURE;
   }
 
-  std::string model_path  = parser.get<std::string>("model");
+  std::string model_path = parser.get<std::string>("model_path");
+  std::string model_name = parser.get<std::string>("model_name");
+  bool blur = parser.get<bool>("blur");
   float threshold         = parser.get<float>("threshold");
   float nms_threshold     = parser.get<float>("nms_threshold");
   std::string output_path = parser.get<std::string>("output");
@@ -46,7 +52,9 @@ int main(int argc, char* argv[]) {
   std::string video_path  = input_path + "/" + video_file;
 
   std::string output_folder = output_path + "/" + video_file;
-  std::string cmd = "mkdir -p " + output_folder;
+  std::string cmd = "rm -rf " + output_folder;
+  system(cmd.c_str());
+  cmd = "mkdir -p " + output_folder;
   system(cmd.c_str());
 
   cv::VideoCapture capture(video_path);
@@ -57,13 +65,14 @@ int main(int argc, char* argv[]) {
       std::cout<< "read first frame failed!";
       exit(1);
   }
-  SSH det(model_path, frame.cols, frame.rows, threshold, nms_threshold);
+  SSH det(model_path, model_name, frame.cols, frame.rows, threshold, nms_threshold, blur);
 
   std::cout << "frame resolution: " << frame.cols << "*" << frame.rows << "\n";
 
   std::vector<cv::Rect2f> boxes;
   std::vector<cv::Point2f> landmarks;
   std::vector<float> scores;
+  std::vector<float> blur_scores;  
 
   struct timeval  tv1,tv2;
 
@@ -74,7 +83,10 @@ int main(int argc, char* argv[]) {
       if(frame_count%15!=0) continue;
       
       gettimeofday(&tv1,NULL);
-      det.detect(frame,boxes,landmarks,scores);
+      if(blur)
+        det.detect(frame,boxes,landmarks,scores,blur_scores);
+      else
+        det.detect(frame,boxes,landmarks,scores);
       gettimeofday(&tv2,NULL);
       std::cout << "detected one frame, time eclipsed: " <<  getElapse(&tv1, &tv2) << " ms\n";
 
@@ -84,7 +96,9 @@ int main(int argc, char* argv[]) {
       for(int i=0;i<boxes.size();i++){
         cv::rectangle( frame, boxes[i], cv::Scalar( 255, 0, 0 ), 2, 1 );
         cv::Point middleHighPoint = cv::Point(boxes[i].x+boxes[i].width/2, boxes[i].y);
-        std::string text = std::to_string(scores[i]);
+        char buf_text[64];
+        snprintf(buf_text, 64, "s:%.3f, b: %.3f", scores[i], blur_scores[i]);
+        std::string text(buf_text);
         cv::putText(frame, text, middleHighPoint, cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 2);
       }
 

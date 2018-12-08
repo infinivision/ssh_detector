@@ -142,6 +142,31 @@ void bbox_pred(std::vector<cv::Rect2f> & anchors, std::vector<cv::Rect2f> & boxe
 
 }
 
+void bbox_pred_blur(std::vector<cv::Rect2f> & anchors, std::vector<cv::Rect2f> & boxes, std::vector<float> & blur_scores,
+               std::vector<float> & box_deltas, int pred_len , int h, int w) {
+
+    std::vector<float> box_deltas2;
+    tensor_reshape(box_deltas, box_deltas2, h, w);
+
+    int count = box_deltas2.size() / pred_len;
+    assert(anchors.size() == count );
+    boxes.resize(anchors.size());
+
+    for(size_t i=0; i < count; i++){
+        cv::Point2f center = anchors[i].tl() + 0.5 * cv::Point2f(anchors[i].width-1, anchors[i].height-1);
+        center = center + cv::Point2f(box_deltas2[i*pred_len]* anchors[i].width, box_deltas2[i*pred_len+1]*anchors[i].height);
+        boxes[i].width  = anchors[i].width  * exp(box_deltas2[i*pred_len+2]);
+        boxes[i].height = anchors[i].height * exp(box_deltas2[i*pred_len+3]);
+        boxes[i].x = center.x - 0.5 * (boxes[i].width  -1.0);
+        boxes[i].y = center.y - 0.5 * (boxes[i].height -1.0);;
+    }
+
+    blur_scores.clear();
+    for(size_t i=0; i < count; i++){
+        blur_scores.push_back(box_deltas2[i*pred_len+4]);
+    }
+}
+
 void landmark_pred(std::vector<cv::Rect2f> & anchors, std::vector<cv::Point2f> & landmarks, 
                    std::vector<float> & landmark_deltas, int h, int w) {
 

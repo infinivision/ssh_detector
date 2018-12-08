@@ -8,18 +8,30 @@
 
 class SSH{
 public:
-    SSH(const std::string& model_path, int w = 800, int h = 600, 
+    SSH(const std::string& model_path, int w = 800, int h = 600,
                                        float threshold = 0.95, float nms_threshold = 0.3);
+    SSH(const std::string& model_path, const std::string& model_name,
+                                       int w = 800, int h = 600,
+                                       float threshold = 0.95, float nms_threshold = 0.3,
+                                       bool infer_blur_score=false);
+    SSH(const std::string& model_path, const std::string& model_name,
+                                       std::vector<float> means, std::vector<float> stds, float scale,
+                                       int w = 800, int h = 600,
+                                       float threshold = 0.95, float nms_threshold = 0.3,
+                                       bool infer_blur_score=false);
     ~SSH();
-    void detect(cv::Mat& img, std::vector<cv::Rect2f>  & target_boxes, 
+    void detect(cv::Mat& img, std::vector<cv::Rect2f>  & target_boxes,
                               std::vector<cv::Point2f> & target_landmarks,
                               std::vector<float>       & target_scores);
-
+    void detect(cv::Mat& img, std::vector<cv::Rect2f>  & target_boxes,
+                              std::vector<cv::Point2f> & target_landmarks,
+                              std::vector<float>       & target_scores,
+                              std::vector<float>       & target_blur_scores);
 private:
 
-    const float pixel_means[3] = {0.406, 0.456, 0.485};
-    const float pixel_stds[3] = {0.225, 0.224, 0.229};
-    const float pixel_scale = 255.0;
+    float pixel_means[3] = {0.406, 0.456, 0.485};
+    float pixel_stds[3]  = {0.225, 0.224, 0.229};
+    float pixel_scale = 255.0;
 
     std::map<int, std::vector<cv::Rect2f>> anchors_fpn;
     std::map<int,int>                      num_anchors;
@@ -27,6 +39,8 @@ private:
     // const int   rpn_pre_nms_top_n = 1000;
     float nms_threshold = 0.3;
     float threshold = 0.95;
+
+    bool infer_blur_score = false;
 
     void * handle;
     int w;

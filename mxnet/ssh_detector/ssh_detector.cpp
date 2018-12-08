@@ -40,6 +40,79 @@ SSH::SSH(const std::string& model_path, int w, int h, float threshold, float nms
 
 }
 
+SSH::SSH(const std::string& model_path, const std::string& model_name,
+         int w, int h, float threshold, float nms_threshold,
+         bool infer_blur_score) {
+
+    generate_anchors_fpn(anchors_fpn, num_anchors);
+
+    std::string json_file  = model_path + "/" + model_name + "-symbol.json";
+    std::string param_file = model_path + "/" + model_name + "-0000.params";
+
+    int channels = 3;
+    mxInputShape input_shape (w, h, channels);
+    
+    // Load model
+    PredictorHandle pred_hnd = nullptr;
+    mxLoadMXNetModel(&pred_hnd, json_file, param_file, input_shape);
+
+    handle = (void *) pred_hnd;
+
+    this->w = w;
+    this->h = h;
+    this->threshold     = threshold;
+    this->nms_threshold = nms_threshold;
+
+    this->infer_blur_score = infer_blur_score;
+    if(infer_blur_score){
+        pixel_means[0] = 0;
+        pixel_means[1] = 0;
+        pixel_means[2] = 0;
+        pixel_stds[0] = 1;
+        pixel_stds[1] = 1;
+        pixel_stds[2] = 1;
+        pixel_scale = 1;              
+    }
+
+}
+
+
+SSH::SSH(const std::string& model_path, const std::string& model_name,
+         std::vector<float> means, std::vector<float> stds, float scale,
+         int w, int h, float threshold, float nms_threshold,
+         bool infer_blur_score) {
+
+    generate_anchors_fpn(anchors_fpn, num_anchors);
+
+    std::string json_file  = model_path + "/" + model_name + "-symbol.json";
+    std::string param_file = model_path + "/" + model_name + "-0000.params";
+
+    int channels = 3;
+    mxInputShape input_shape (w, h, channels);
+    
+    // Load model
+    PredictorHandle pred_hnd = nullptr;
+    mxLoadMXNetModel(&pred_hnd, json_file, param_file, input_shape);
+
+    handle = (void *) pred_hnd;
+
+    this->w = w;
+    this->h = h;
+    this->threshold     = threshold;
+    this->nms_threshold = nms_threshold;
+
+    assert(means.size()==3);
+    assert(stds.size()==3);
+
+    for(int i=0;i<3;i++){
+        pixel_means[i] = means[i];
+        pixel_stds[i]  = stds[i];
+    }
+    pixel_scale = scale;
+
+    this->infer_blur_score = infer_blur_score;
+}
+
 SSH::~SSH(){
     PredictorHandle pred_hnd = (PredictorHandle) handle;
     MXPredFree(pred_hnd);
@@ -47,7 +120,8 @@ SSH::~SSH(){
 
 void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes, 
                               std::vector<cv::Point2f> & target_landmarks,
-                              std::vector<float>       & target_scores) {
+                              std::vector<float>       & target_scores,
+                              std::vector<float>       & target_blur_scores) {
 
     assert(im.channels()==3);
     int size = im.rows * im.cols * 3;
@@ -101,6 +175,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     // Inference
     std::vector<float> scores;
     std::vector<cv::Rect2f> boxes;
+    std::vector<float> blur_scores;
     std::vector<cv::Point2f> landmarks;
 
     for(int i=0; i< 3; i++) {
@@ -148,9 +223,16 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         anchor_plane(h,w, stride, anchors_fpn[stride], anchors);
 
         std::vector<cv::Rect2f> boxes1;
-        bbox_pred(anchors, boxes1, bbox_deltas, h, w);
+        std::vector<float> blur_scores1;
+        if(infer_blur_score){
+            int pred_len=0;
+            pred_len = shape[1] / num_anchors[stride];
+            bbox_pred_blur(anchors, boxes1, blur_scores1, bbox_deltas, pred_len, h, w);
+        } else
+            bbox_pred(anchors, boxes1, bbox_deltas, h, w);
         clip_boxes(boxes1, im.rows, im.cols);
         // for(size_t i=0; i<5; i++) std::cout <<  "boxes1: " << boxes1[i] << "\n";
+        // for(size_t i=0; i<5; i++) std::cout <<  "blur_scores1: " << blur_scores1[i] << "\n";
         index++;
         std::vector<float> landmark_deltas;
 
@@ -174,8 +256,11 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         tensor_slice(scores3, scores4, idx, 1);
         scores.insert(scores.end(), scores4.begin(), scores4.end());
         std::vector<cv::Rect2f> boxes2;
+        std::vector<float> blur_scores2;
         tensor_slice(boxes1, boxes2, idx, 1);
+        if(infer_blur_score)  tensor_slice(blur_scores1, blur_scores2, idx, 1);
         boxes.insert(boxes.end(), boxes2.begin(), boxes2.end());
+        if(infer_blur_score) blur_scores.insert(blur_scores.end(), blur_scores2.begin(), blur_scores2.end());
         std::vector<cv::Point2f> landmarks2;
         tensor_slice(landmarks1, landmarks2, idx, 5);
         landmarks.insert(landmarks.end(), landmarks2.begin(), landmarks2.end());
@@ -187,10 +272,12 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
 
     std::vector<float> order_scores;
     std::vector<cv::Rect2f> order_boxes;
+    std::vector<float> order_blur_scores;
     std::vector<cv::Point2f> order_landmarks;
 
     sort_with_idx(scores, order_scores, order, 1);
     sort_with_idx(boxes,  order_boxes, order, 1);
+    if(infer_blur_score) sort_with_idx(blur_scores,  order_blur_scores, order, 1);
     sort_with_idx(landmarks, order_landmarks, order, 5);
 
     // for(auto & s: order_scores) std::cout << "scores: " << s << "\n";
@@ -202,6 +289,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     // for(size_t i=0;i<keep.size();i++) if(keep[i]) std::cout << "keep: " << i << "\n";
 
     tensor_slice(order_boxes,     target_boxes,     keep, 1);
+    if(infer_blur_score) tensor_slice(order_blur_scores,     target_blur_scores,     keep, 1);
     tensor_slice(order_landmarks, target_landmarks, keep, 5);
     tensor_slice(order_scores,    target_scores,    keep, 1);
 
@@ -215,4 +303,11 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     std::cout << "mxnet infer, time eclipsed: " << sum_time  << " ms\n";
     #endif
 
+}
+
+void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes, 
+                              std::vector<cv::Point2f> & target_landmarks,
+                              std::vector<float>       & target_scores){
+    std::vector<float>  target_blur_scores;
+    detect(im, target_boxes, target_landmarks, target_scores, target_blur_scores);
 }
