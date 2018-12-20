@@ -48,6 +48,7 @@ int main(int argc, char* argv[]) {
       "{nms_threshold  |0.3             | nms_threshold for ssh detector }"      
       "{output         |./output        | path to save detect output  }"
       "{input          |../../../video  | path to input video file  }"      
+      "{dynamic        |false           | true if input size is dynamic  }"
       "{@video         |camera-244-crop-8p.mov     | input video file }"
   ;
 
@@ -71,6 +72,7 @@ int main(int argc, char* argv[]) {
   std::string output_path = parser.get<std::string>("output");
   std::string input_path  = parser.get<std::string>("input");
   std::string video_file  = parser.get<std::string>(0);
+  bool dynamic = parser.get<bool>("dynamic");
   std::string video_path  = input_path + "/" + video_file;
 
   std::string output_folder = output_path + "/" + video_file;
@@ -87,7 +89,7 @@ int main(int argc, char* argv[]) {
       std::cout<< "read first frame failed!";
       exit(1);
   }
-  SSH * det = new SSH(model_path, model_name, frame.cols, frame.rows, threshold, nms_threshold, blur);
+  SSH * det = new SSH(model_path, model_name, threshold, nms_threshold, blur);
 
   std::cout << "frame resolution: " << frame.cols << "*" << frame.rows << "\n";
 
@@ -116,8 +118,12 @@ int main(int argc, char* argv[]) {
       int y = rand() % frame_.rows;
       cv::Rect roi(x,y,w,h);
       roi = roi & cv::Rect(0,0,frame_.cols,frame_.rows);
-      frame = cv::Mat(frame_, roi);
       
+      if(dynamic)
+        frame = cv::Mat(frame_, roi);
+      else
+          frame = frame_;
+
       frame_count++;
       if(!frame.data)   break;
       if(frame_count%15!=0) continue;

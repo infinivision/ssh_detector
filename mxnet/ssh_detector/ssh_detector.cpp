@@ -5,8 +5,6 @@
 
 #include "anchors.h"
 
-#include "mxnet_model.h"
-
 static float getElapse(struct timeval *tv1,struct timeval *tv2)
 {
     float t = 0.0f;
@@ -17,10 +15,19 @@ static float getElapse(struct timeval *tv1,struct timeval *tv2)
     return t;
 }
 
-SSH::SSH(const std::string& model_path, int w, int h, float threshold, float nms_threshold) {
+SSH::SSH(const std::string& model_path, float threshold, float nms_threshold):
+          json_data(model_path + "/mneti-symbol.json"),
+          param_data(model_path + "/mneti-symbol.json")
+{
+    if (json_data.GetLength() == 0 || param_data.GetLength() == 0) {
+        std::cerr << "Cannot load mxnet model" << std::endl;
+        std::cerr << "\tjson file: " << json_data.file_path_ << std::endl;
+        std::cerr << "\tparams file: " << param_data.file_path_ << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     generate_anchors_fpn(anchors_fpn, num_anchors);
-
+    /*
     std::string json_file = model_path + "/mneti-symbol.json";
     std::string param_file = model_path + "/mneti-0000.params";
 
@@ -35,17 +42,27 @@ SSH::SSH(const std::string& model_path, int w, int h, float threshold, float nms
 
     this->w = w;
     this->h = h;
+    */
     this->threshold     = threshold;
     this->nms_threshold = nms_threshold;
 
 }
 
 SSH::SSH(const std::string& model_path, const std::string& model_name,
-         int w, int h, float threshold, float nms_threshold,
-         bool infer_blur_score) {
+         float threshold, float nms_threshold,
+         bool infer_blur_score):
+          json_data(model_path + "/" + model_name + "-symbol.json"),
+          param_data(model_path + "/" + model_name + "-0000.params")
+{
+    if (json_data.GetLength() == 0 || param_data.GetLength() == 0) {
+        std::cerr << "Cannot load mxnet model" << std::endl;
+        std::cerr << "\tjson file: " << json_data.file_path_ << std::endl;
+        std::cerr << "\tparams file: " << param_data.file_path_ << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     generate_anchors_fpn(anchors_fpn, num_anchors);
-
+    /*
     std::string json_file  = model_path + "/" + model_name + "-symbol.json";
     std::string param_file = model_path + "/" + model_name + "-0000.params";
 
@@ -60,6 +77,7 @@ SSH::SSH(const std::string& model_path, const std::string& model_name,
 
     this->w = w;
     this->h = h;
+    */
     this->threshold     = threshold;
     this->nms_threshold = nms_threshold;
 
@@ -79,11 +97,20 @@ SSH::SSH(const std::string& model_path, const std::string& model_name,
 
 SSH::SSH(const std::string& model_path, const std::string& model_name,
          std::vector<float> means, std::vector<float> stds, float scale,
-         int w, int h, float threshold, float nms_threshold,
-         bool infer_blur_score) {
+         float threshold, float nms_threshold,
+         bool infer_blur_score):
+          json_data(model_path + "/" + model_name + "-symbol.json"),
+          param_data(model_path + "/" + model_name + "-0000.params")
+{
+    if (json_data.GetLength() == 0 || param_data.GetLength() == 0) {
+        std::cerr << "Cannot load mxnet model" << std::endl;
+        std::cerr << "\tjson file: " << json_data.file_path_ << std::endl;
+        std::cerr << "\tparams file: " << param_data.file_path_ << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     generate_anchors_fpn(anchors_fpn, num_anchors);
-
+    /*
     std::string json_file  = model_path + "/" + model_name + "-symbol.json";
     std::string param_file = model_path + "/" + model_name + "-0000.params";
 
@@ -98,6 +125,7 @@ SSH::SSH(const std::string& model_path, const std::string& model_name,
 
     this->w = w;
     this->h = h;
+    */
     this->threshold     = threshold;
     this->nms_threshold = nms_threshold;
 
@@ -113,10 +141,12 @@ SSH::SSH(const std::string& model_path, const std::string& model_name,
     this->infer_blur_score = infer_blur_score;
 }
 
+/*
 SSH::~SSH(){
     PredictorHandle pred_hnd = (PredictorHandle) handle;
     MXPredFree(pred_hnd);
 }
+*/
 
 void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes, 
                               std::vector<cv::Point2f> & target_landmarks,
@@ -126,7 +156,7 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     assert(im.channels()==3);
     int size = im.rows * im.cols * 3;
 
-    PredictorHandle pred_hnd = nullptr;    
+    PredictorHandle pred_hnd = nullptr;
     mxInputShape input_shape(im.cols, im.rows, 3);
 
     #ifdef BENCH_SSH
@@ -134,7 +164,23 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     float sum_time = 0;
     gettimeofday(&tv1,NULL);
     #endif   
-    mxHandleReshape((PredictorHandle) handle, input_shape, &pred_hnd);
+    // mxHandleReshape((PredictorHandle) handle, input_shape, &pred_hnd);
+    // create a new mxnet infer handle
+    mx_uint num_input_nodes = 1;  // 1 for feedforward
+    const char* input_key[1] = { "data" };
+    const char** input_keys = input_key;
+    int res = MXPredCreate(static_cast<const char*>(json_data.GetBuffer()),
+                static_cast<const char*>(param_data.GetBuffer()),
+                static_cast<int>(param_data.GetLength()),
+                1,
+                0,
+                num_input_nodes,
+                input_keys,
+                input_shape.input_shape_indptr,
+                input_shape.input_shape_data,
+                &pred_hnd);
+    assert(res==0);
+
     #ifdef BENCH_SSH
     gettimeofday(&tv2,NULL);
     sum_time += getElapse(&tv1, &tv2);

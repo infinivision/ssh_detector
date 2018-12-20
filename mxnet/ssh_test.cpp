@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   std::vector<float> stds;
   float scale;
 
-  SSH det(model_path, model_name, 100, 100, 0.95, 0.3, blur);
+  SSH det(model_path, model_name, 0.95, 0.3, blur);
 
   std::vector<cv::Rect2f> bboxes;
   std::vector<cv::Point2f> landmarks;
