@@ -6,6 +6,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "../mxnet/ssh_detector/mxnet_model.h"
+
 class SSH{
 public:
     SSH(const std::string& model_path, float threshold = 0.95, float nms_threshold = 0.3);

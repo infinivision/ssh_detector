@@ -1,4 +1,4 @@
-#include "ssh_detector.h"
+#include "ssh_detector_mxnet.h"
 
 #include <stdlib.h>
 #include <sys/time.h>
@@ -44,6 +44,7 @@ int main(int argc, char* argv[]) {
       "{model_path     |../../model     | path to ssh model  }"
       "{model_name     |mneti           | model name }"
       "{blur           |false           | if use blur scores }" 
+      "{peroid         |1              | detect peroid }"
       "{threshold      |0.95            | threshold for detect score }"
       "{nms_threshold  |0.3             | nms_threshold for ssh detector }"      
       "{output         |./output        | path to save detect output  }"
@@ -67,6 +68,7 @@ int main(int argc, char* argv[]) {
   std::string model_path = parser.get<std::string>("model_path");
   std::string model_name = parser.get<std::string>("model_name");
   bool blur = parser.get<bool>("blur");
+  int peroid              = parser.get<int>("peroid");
   float threshold         = parser.get<float>("threshold");
   float nms_threshold     = parser.get<float>("nms_threshold");
   std::string output_path = parser.get<std::string>("output");
@@ -110,6 +112,8 @@ int main(int argc, char* argv[]) {
       s.height /= resize_rate;
       cv::resize(frame_,frame,s);
       */
+      if(!frame_.data)
+        break;
       int w = frame_.cols;
       int h = frame_.rows;
       w *=  (rand() % 20 + 1 ) / 20.0;
@@ -125,8 +129,7 @@ int main(int argc, char* argv[]) {
           frame = frame_;
 
       frame_count++;
-      if(!frame.data)   break;
-      if(frame_count%15!=0) continue;
+      if(frame_count%peroid!=0) continue;
       
       gettimeofday(&tv1,NULL);
       if(blur)
