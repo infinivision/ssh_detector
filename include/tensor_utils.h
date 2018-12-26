@@ -52,3 +52,37 @@ inline void tensor_reshape(std::vector<float> & tensor1, std::vector<float> & te
         for(size_t j = 0; j< d1; j++)
             tensor2[i+j*d2] = tensor1[i*d1+j];
 }
+
+inline void tensor_reshape(std::vector<float> & tensor1, std::vector<float> & tensor2, int H, int W, int c)
+{
+
+    int d1 = H * W;
+    int d2 = tensor1.size() / d1 / c;
+    tensor2.resize(tensor1.size());
+
+    if (c == 1)
+    {
+        for (int i = 0; i < d2; ++i)
+        {
+            for (int j = 0; j < d1; ++j)
+            {
+                tensor2[i + j * d2] = tensor1[i * d1 + j];
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < d2; ++i)
+        {
+            for (int j = 0; j < d1; ++j)
+            {
+                int base1 = (i * d1 + j) * c;
+                int base2 = (i + j * d2) * c;
+                for (int k = 0; k < c; ++k)
+                {
+                    tensor2[base2 + k] = tensor1[base1 + k];
+                }
+            }
+        }
+    }
+}

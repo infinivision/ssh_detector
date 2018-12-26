@@ -8,15 +8,10 @@
 
 class SSH{
 public:
-    SSH(const std::string& model_path, float threshold = 0.95, float nms_threshold = 0.3);
-    SSH(const std::string& model_path, const std::string& model_name,
-                                       float threshold = 0.95, float nms_threshold = 0.3,
-                                       bool infer_blur_score=false);
-    SSH(const std::string& model_path, const std::string& model_name,
-                                       std::vector<float> means, std::vector<float> stds, float scale,
-                                       float threshold = 0.95, float nms_threshold = 0.3,
-                                       bool infer_blur_score=false);
-    // ~SSH();
+    SSH(const std::string& model_path, float threshold = 0.95, float nms_threshold = 0.3, bool infer_blur_score=false);
+    SSH(const std::string& model_path, std::vector<float> means, std::vector<float> stds, float scale,
+                                       float threshold = 0.95, float nms_threshold = 0.3, bool infer_blur_score=false);
+    ~SSH();
     void detect(cv::Mat& img, std::vector<cv::Rect2f>  & target_boxes,
                               std::vector<cv::Point2f> & target_landmarks,
                               std::vector<float>       & target_scores);
@@ -39,11 +34,10 @@ private:
 
     bool infer_blur_score = false;
 
-    // void * handle;
+    void * handle;
+    
     // int w;
     // int h;
-    mxBufferFile json_data;
-    mxBufferFile param_data;
     // nms();
 
 };
