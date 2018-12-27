@@ -4,6 +4,7 @@
 #include <sys/time.h>
 
 #include <stdio.h>
+#include <math.h>
 
 static float getElapse(struct timeval *tv1,struct timeval *tv2)
 {
@@ -41,9 +42,9 @@ int main(int argc, char* argv[]) {
 
   const std::string keys =
       "{help h usage ? |                | print this message   }"
-      "{model_path     |../../model     | path to ssh model  }"
+      "{model_path     |/Users/load/code/python/infinivision/tvm-convertor/tvm-model/broadwell/mneti/2688_1520     | path to ssh model  }"
       "{blur           |false           | if use blur scores }" 
-      "{peroid         |1              | detect peroid }"
+      "{peroid         |15              | detect peroid }"
       "{threshold      |0.95            | threshold for detect score }"
       "{nms_threshold  |0.3             | nms_threshold for ssh detector }"      
       "{output         |./output        | path to save detect output  }"
@@ -80,9 +81,10 @@ int main(int argc, char* argv[]) {
   system(cmd.c_str());
 
   cv::VideoCapture capture(video_path);
-  cv::Mat frame;
+  cv::Mat frame,frame_r;
   int frame_count = 1;
   capture >> frame;
+  resize(frame,frame_r,frame.size()/2);
   if(!frame.data) {
       std::cout<< "read first frame failed!";
       exit(1);
@@ -97,8 +99,22 @@ int main(int argc, char* argv[]) {
   std::vector<float> blur_scores;  
 
   struct timeval  tv1,tv2;
+  char keyboard = 0;
+  bool stop=false;
+  while(keyboard != 'q' && keyboard != 27){
 
-  while(1){
+      keyboard = (char)cv::waitKey( 30 );
+      
+      if(stop){
+          cv::imshow("Frame", frame_r);
+          if(keyboard==32) stop = false;
+          continue;
+      } else if(keyboard==32){
+          stop = true;
+          continue;
+      }
+      resize(frame,frame_r,frame.size()/2);
+      cv::imshow("Frame",frame_r);
       capture >> frame;
       if(!frame.data)
         break;
@@ -114,9 +130,9 @@ int main(int argc, char* argv[]) {
       gettimeofday(&tv2,NULL);
       std::cout << "detected one frame " << scores.size() << " persons, time eclipsed: " <<  getElapse(&tv1, &tv2) << " ms\n";
 
-      for(auto & b: boxes)
-        cv::rectangle( frame, b, cv::Scalar( 255, 0, 0 ), 2, 1 );
-        
+      for(auto & p: landmarks)
+        cv::drawMarker(frame, p,  cv::Scalar(0, 255, 0), cv::MARKER_CROSS, 10, 1);
+
       for(int i=0;i<boxes.size();i++){
         cv::rectangle( frame, boxes[i], cv::Scalar( 255, 0, 0 ), 2, 1 );
 
@@ -156,10 +172,13 @@ int main(int argc, char* argv[]) {
       }
 
       //for(auto & p: landmarks)
-      //  cv::drawMarker(frame, p,  cv::Scalar(0, 255, 0), cv::MARKER_CROSS, 10, 1);    
-
-      if(boxes.size()>0)
-        cv::imwrite( output_folder + "/" + std::to_string(frame_count) + ".jpg", frame);
+      //  cv::drawMarker(frame, p,  cv::Scalar(0, 255, 0), cv::MARKER_CROSS, 10, 1);
+      if(boxes.size()>0){
+          // cv::imwrite( output_folder + "/" + std::to_string(frame_count) + ".jpg", frame);
+          
+          for(auto b: boxes)
+            std::cout << "bouding box area: " << b.area() << "  len: " << sqrt(b.area()) << "\n";
+      }
 
   }
 

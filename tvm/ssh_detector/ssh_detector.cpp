@@ -271,6 +271,16 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
         gettimeofday(&tv2,NULL);
         sum_time += getElapse(&tv1, &tv2);
 #endif
+        c = 1;
+        if (shape.size() >= 5)
+        {
+            c = shape[4];
+        }
+        /*
+        std::cout << "output shape len: " << shape.size() << "\n";
+        for(auto s: shape)
+            std::cout << "output shape3: " << s << "\n";
+        */
 
         std::vector<cv::Point2f> landmarks1;
         landmark_pred(anchors, landmarks1, landmark_deltas, h, w, c);
