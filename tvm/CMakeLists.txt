@@ -32,5 +32,5 @@ link_directories(
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/ssh_detector)
 
-add_executable(ssh_bench ssh_bench.cpp tvm_runtime_pack.cc)
+add_executable(ssh_bench ssh_bench.cpp)
 target_link_libraries(ssh_bench ssh_detector  ${OpenCV_LIBS} pthread dl)
