@@ -161,12 +161,14 @@ int main(int argc, char* argv[]) {
         */
         // s = s / 10000;
         cv::Point middleHighPoint = cv::Point(boxes[i].x+boxes[i].width/2, boxes[i].y);
-        char buf_text[64];
+        char buf_text[32];
         if(blur)
             snprintf(buf_text, 64, "s:%.3f, b: %.3f", scores[i], blur_scores[i]);
         else
             snprintf(buf_text, 64, "s:%.3e", scores[i]);
         std::string text(buf_text);
+        // snprintf(buf_text, 64, "e:%.3f,m:%.3f", landmarks[i*5+1].x-landmarks[i*5+0].x, landmarks[i*5+4].x-landmarks[i*5+3].x);
+        // text = buf_text;
         cv::putText(frame, text, middleHighPoint, cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 2);
 
       }
