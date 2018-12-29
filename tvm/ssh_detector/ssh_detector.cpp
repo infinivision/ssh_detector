@@ -113,14 +113,12 @@ SSH::SSH(const std::string& model_path, std::vector<float> means, std::vector<fl
     this->infer_blur_score = infer_blur_score;
 }
 
-DLTensor* x = nullptr;
-
 SSH::~SSH()
 {
     tvm::runtime::Module* mod = (tvm::runtime::Module*) handle;
     delete mod;
-    if(x!=nullptr)
-        delete x;
+    if(infer_buff!=nullptr)
+        TVMArrayFree((DLTensor* )infer_buff);
 }
 
 void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
@@ -162,8 +160,15 @@ void SSH::detect(cv::Mat& im, std::vector<cv::Rect2f>  & target_boxes,
     constexpr int in_ndim = 4;
     const int64_t in_shape[in_ndim] = {1, 3, im.rows, im.cols};
 
-    if(x==nullptr)
+    DLTensor* x;
+
+    if(infer_buff==nullptr){
         TVMArrayAlloc(in_shape, in_ndim, dtype_code, dtype_bits, dtype_lanes, device_type, device_id, &x);
+        infer_buff = (void *) x;
+    } else {
+        x = (DLTensor*) infer_buff;
+    }
+        
 
     memcpy(x->data, &image_data[0], sizeof(image_data[0]) * image_data.size());
 

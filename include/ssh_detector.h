@@ -35,6 +35,7 @@ private:
     bool infer_blur_score = false;
 
     void * handle;
+    void * infer_buff = nullptr;
     
     // int w;
     // int h;
